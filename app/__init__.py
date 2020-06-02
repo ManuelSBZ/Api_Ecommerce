@@ -98,6 +98,8 @@ class Order(db.Model):
     description=Column(String(100), default="")
     date=Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
     article_association=relationship("Order_Article",back_populates="order")
+    user_id=Column(Integer, ForeignKey("user.id"))
+    user = relationship("User", lazy=True , backref="order")
     
 
 class Category(db.Model):
@@ -513,7 +515,7 @@ api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relatio
 
 # articles
 api.route(ArticleDetail,"article_detail","/article/<int:id>")
-api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#
+api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article","/order/<int:order_id>/article")#
 api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
 
 
