@@ -46,13 +46,49 @@ ma= Marshmallow(app)
 #     db.Column('items',db.Integer, nullable=False)
 # )
 
+# relationship Order => Order_Article <= Article ? trabajarlo con query
+# relationship Order => Order_Article   ||  Order_Article <= Article
+# Order ==> Order_Article ResourceRelationship/
+# Article ==> Order_Article ResourceRelationship
+
+
+
 class Order_Article(db.Model):
     __tablename__='Order_Article'
     order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
     article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
-    items=Column(Integer, nullable=False)
+    item_able=Column(Integer, nullable=False)
     order=relationship("Order", back_populates="article_association")
-    article=relationship("Article", back_populates="order_association")
+    article_able=relationship("Article", back_populates="order_association")
+
+    @property
+    def items(self):
+        return self.item_able
+   
+    @items.setter
+    def items(self,quantity):
+        if self.article is not None:
+            if quantity < self.article.stock:
+                self.item_able = quantity
+            else:
+                raise AttributeError("item´s Quantity can´t be more than stock article")
+        else:
+            self.item_able=quantity
+   
+    @property
+    def article(self):
+        return self.article_able
+
+    @article.setter
+    def article(self,obj):
+        if self.items is not None:
+            if obj.stock > self.items:
+                self.article_able=obj
+            else:
+                raise AttributeError("item´s Quantity can´t be more than stock article")
+        else:
+            self.article_able=obj
+
         
 
 class Order(db.Model):
@@ -83,7 +119,7 @@ class Article(db.Model):
     CategoryId = Column(Integer, ForeignKey('Category.id'))
     #padre= object class Category
     category=relationship("Category",backref="article",lazy=True)
-    order_association=relationship("Order_Article",back_populates="article")
+    order_association=relationship("Order_Article",back_populates="article_able")
     
     def price_with_iva(self):
         final.price= self.price*((self.iva/100)+1)
