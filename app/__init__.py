@@ -8,7 +8,7 @@ from marshmallow import fields, Schema, post_load
 
 # models:
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import String,Integer,Boolean,Float,ForeignKey, Column
+from sqlalchemy import String,Integer,Boolean,Float,ForeignKey, Column, DateTime
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -19,6 +19,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from marshmallow_jsonapi import fields
 from marshmallow_jsonapi.flask import Relationship,Schema
 import os
+import datetime
 
 import json
 
@@ -39,7 +40,18 @@ ma= Marshmallow(app)
 
 
 # TABLES MODELS DEFINITION 
-
+articles_orders= db.Table('articles_orders',
+    db.Column('article_id', db.Integer, db.ForeignKey('Article.id'), primary_key=True),
+    db.Column('order_id', db.Integer, db.ForeignKey('Order.id'), primary_key=True)
+)
+class Order(db.Model):
+    __tablename__="Order"
+    id= Column(Integer(), primary_key=True , nullable=False)
+    status=Column(String(10),nullable=False, default="pendent")
+    description=Column(String(100), default="")
+    date=Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
+    article=relationship("Article",backref="order",secondary=articles_orders, lazy="subquery")
+    
 
 class Category(db.Model):
     # name que se debe poner, sino genera conflictos al importarlo
@@ -57,12 +69,18 @@ class Article(db.Model):
     description=Column(String(255))
     image=Column(String(255))
     stock=Column(Integer,default=0)
-    CategoryId = Column(Integer, ForeignKey('Category.id'), nullable=False)
+    CategoryId = Column(Integer, ForeignKey('Category.id'))
     #padre= object class Category
     category=relationship("Category",backref="article",lazy=True)
     def price_with_iva(self):
         final.price= self.price*((self.iva/100)+1)
         return pricefinal
+
+    def discount(self,quantity):
+        if self.stock > quantity:
+            self.stock-=quantity
+        else:
+            raise Exception("Quantity can´t be more than stock")
         
 roles_users= db.Table('roles_users',
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True),
@@ -448,6 +466,7 @@ api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relatio
 api.route(ArticleDetail,"article_detail","/article/<int:id>"  )
 api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#
 api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
+
 
 
 
