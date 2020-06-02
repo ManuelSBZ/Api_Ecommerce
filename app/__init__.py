@@ -40,17 +40,28 @@ ma= Marshmallow(app)
 
 
 # TABLES MODELS DEFINITION 
-articles_orders= db.Table('articles_orders',
-    db.Column('article_id', db.Integer, db.ForeignKey('Article.id'), primary_key=True),
-    db.Column('order_id', db.Integer, db.ForeignKey('Order.id'), primary_key=True)
-)
+# articles_orders= db.Table('articles_orders',
+#     db.Column('article_id', db.Integer, db.ForeignKey('Article.id'), primary_key=True),
+#     db.Column('order_id', db.Integer, db.ForeignKey('Order.id'), primary_key=True),
+#     db.Column('items',db.Integer, nullable=False)
+# )
+
+class Order_Article(db.Model):
+    __tablename__='Order_Article'
+    order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
+    article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
+    items=Column(Integer, nullable=False)
+    order=relationship("Order", back_populates="article_association")
+    article=relationship("Article", back_populates="order_association")
+        
+
 class Order(db.Model):
     __tablename__="Order"
     id= Column(Integer(), primary_key=True , nullable=False)
     status=Column(String(10),nullable=False, default="pendent")
     description=Column(String(100), default="")
     date=Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
-    article=relationship("Article",backref="order",secondary=articles_orders, lazy="subquery")
+    article_association=relationship("Order_Article",back_populates="order")
     
 
 class Category(db.Model):
@@ -72,6 +83,8 @@ class Article(db.Model):
     CategoryId = Column(Integer, ForeignKey('Category.id'))
     #padre= object class Category
     category=relationship("Category",backref="article",lazy=True)
+    order_association=relationship("Order_Article",back_populates="article")
+    
     def price_with_iva(self):
         final.price= self.price*((self.iva/100)+1)
         return pricefinal
@@ -463,7 +476,7 @@ api.route(CategoryList, "category_list", "/category")
 api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relationship/article")
 
 # articles
-api.route(ArticleDetail,"article_detail","/article/<int:id>"  )
+api.route(ArticleDetail,"article_detail","/article/<int:id>")
 api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#
 api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
 
