@@ -9,7 +9,7 @@ from marshmallow import fields, Schema, post_load
 # models:
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import String,Integer,Boolean,Float,ForeignKey, Column, DateTime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, load_only
 from werkzeug.security import generate_password_hash, check_password_hash
 
 #api
@@ -300,7 +300,8 @@ class UserList(ResourceList):
     #         # diccionario a deserializar en una instancia de User.
     #         data["role_id"]=role_.id
     def before_get(*args,**kwargs):
-        print(kwargs)
+        print(f"KWARGS:{kwargs},ARGS:{args}")
+        print(args[0].__dict__)
     def after_get(self,result):
             return jsonify(result)
     get_schema_kwargs={"only":["name","email","password_hash"]}
@@ -352,7 +353,7 @@ class RoleList(ResourceList):
                 query_=query_.join(roles_users).join(User).filter(User.id==view_kwargs.get("user_id"))
         return query_
     # para crear un usuario en el rol especificado
-    def before_create_object(self,data,**keywargs):
+    def before_create_object(self,data,view_kwargs):
         if view_kwargs.get("user_id") is not None:
             # obtenemos el objeto del role
             role_=self.session.query(User).filter(id=view_kwargs.get("user_id")).one()
@@ -460,12 +461,16 @@ class ArticleList(ResourceList):
                 raise ObjectNotFound({'parameter': 'id'}, "Category:{} not found".format(view_kwargs.get("category_id")))
             else:
                 query_=query_.filter(Article.CategoryId == view_kwargs.get("category_id"))
-                # retornando lista de los usuarios relcionados con el rol especifiado por el id
+                # retornando query de los usuarios relcionados con el rol especifiado por el id
         return query_
     def before_create_object(self,data, view_kwargs):
         if view_kwargs.get("category_id") is not None:
-            category_=self.session.query(Category).filter_by(id=view_kwargs["category_id"]).one()
-            data["CategoryId"]=category_.id
+            print(f"CATEGORY CREATED DATA: {data}, VIEW_KWARGS:{view_kwargs}")
+            try:
+                category_=self.session.query(Category).filter_by(id=view_kwargs["category_id"]).one() 
+                data["CategoryId"]=category_.id
+            except NoResultFound:
+                raise ObjectNotFound({'parameter': 'id'}, "Category:{} not found".format(view_kwargs.get("category_id")))
 
     def after_get(self,result):
             return jsonify(result)
@@ -512,10 +517,24 @@ api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relatio
 
 # articles
 api.route(ArticleDetail,"article_detail","/article/<int:id>")
-api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article","/order/<int:order_id>/article")#
+api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#
 api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
 
+# class OrderSchema(Schema):
+#     class Meta:
+#         type_="order"
+#         self_view="order_detail"
+#         self_view_kwargs={'id':'<id>'}
+#         self_view_many="order_list"
+    
+    
 
+
+# # Order
+# api.route(OrderDetail,"order_detail","/order/<int:id>")# trae detalle de orden con relaciones con articulos y relacion con usuario
+# api.route(OrderList, "order_list", "/order", "/user/<int:user_id>/order")# trae lista de ordenes existentes / lista de ordenes relacionadas con un usuario 
+# api.route(OrderArticleRelationship, "order_article", "/order/<int:id>/relationship/article/association")# trae lista de relaciones con articulos
+# api.route(OrderUserRelationship, "order_usuario", "/order/<int:id>/relationship/user")# trae lista de relaciones con usuarios
 
 
 if __name__ == "__main__":
