@@ -52,7 +52,7 @@ ma= Marshmallow(app)
 # Article ==> Order_Article ResourceRelationship
 
 
-
+# MODELS
 class Order_Article(db.Model):
     __tablename__='Order_Article'
     order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
@@ -88,9 +88,7 @@ class Order_Article(db.Model):
                 raise AttributeError("item´s Quantity can´t be more than stock article")
         else:
             self.article_able=obj
-
         
-
 class Order(db.Model):
     __tablename__="Order"
     id= Column(Integer(), primary_key=True , nullable=False)
@@ -99,9 +97,8 @@ class Order(db.Model):
     date=Column(DateTime, nullable=False, default=datetime.datetime.utcnow())
     article_association=relationship("Order_Article",back_populates="order")
     user_id=Column(Integer, ForeignKey("user.id"))
-    user = relationship("User", lazy=True , backref="order")
+    user = relationship("User", lazy=True , backref="Order")
     
-
 class Category(db.Model):
     # name que se debe poner, sino genera conflictos al importarlo
     __tablename__='Category'
@@ -180,6 +177,7 @@ class Role(db.Model):
     id=Column(Integer, nullable=False,primary_key=True)
     name=Column(String(10), nullable=False)
 
+
 #SCHEMAS DEFINITIONS
 class RoleSchema(Schema):
     class Meta:
@@ -199,7 +197,6 @@ class RoleSchema(Schema):
         type_="user"
     )
     
-
 class UserSchema(Schema):
     class Meta:
         type_="user"
