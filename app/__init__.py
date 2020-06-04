@@ -55,6 +55,7 @@ ma= Marshmallow(app)
 # MODELS
 class Order_Article(db.Model):
     __tablename__='Order_Article'
+    id= Column(Integer(), primary_key=True , nullable=False)
     order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
     article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
     item_able=Column(Integer, nullable=False)
