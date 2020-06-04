@@ -531,11 +531,37 @@ api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationsh
     
 
 
-# # Order
-# api.route(OrderDetail,"order_detail","/order/<int:id>")# trae detalle de orden con relaciones con articulos y relacion con usuario
-# api.route(OrderList, "order_list", "/order", "/user/<int:user_id>/order")# trae lista de ordenes existentes / lista de ordenes relacionadas con un usuario 
-# api.route(OrderArticleRelationship, "order_article", "/order/<int:id>/relationship/article/association")# trae lista de relaciones con articulos
-# api.route(OrderUserRelationship, "order_usuario", "/order/<int:id>/relationship/user")# trae lista de relaciones con usuarios
+# Order(1)
+api.route(OrderDetail,"order_detail","/order/<int:id>")#  se podria añadir detalle de orden desde asociacion con dos ids 
+api.route(OrderList, "order_list", "/order", "/user/<int:user_id>/order", "article/<int:article_id>/order")# P 
+api.route(OrderAsscArticleRelationship, "order_assc", "/order/<int:id>/relationship/order&article")# 
+api.route(OrderUserRelationship, "order_user", "/order/<int:id>/relationship/user")# 
+api.route(OrderAsscArticleRelationship, "order_article", "/order/<int:id>/relationship/article")# trae lista de relaciones con articulos
+
+
+
+class OrderArticleSchema(Schema):
+    class Meta:
+        self_view_many="order_article_list"
+
+    order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
+    article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
+    item_able=Column(Integer, nullable=False)
+    order=relationship("Order", back_populates="article_association")
+    article_able=relationship("Article", back_populates="order_association")
+    
+
+
+
+
+
+
+
+# Order_Article:
+# api.route(OrderArticleDetail,"order_article_detail","/order&article/<int:id>")# trae detalle de orden con relaciones con articulos y relacion con usuario
+api.route(OrderArticleList, "order_article_list", "/order&article", "/order/<int:order_id>/order&article", "article/<int:article_id>/order&article")# trae lista de ordenes existentes / lista de ordenes relacionadas con un usuario 
+# api.route(OrderArticleRelationship, "order_article_article", "/order&article/<int:id>/relationship/article")# trae lista de relaciones con articulos
+# api.route(OrderUserRelationship, "order_article_order", "/order&article/<int:id>/relationship/user")# trae lista de relaciones con usuarios
 
 
 if __name__ == "__main__":
