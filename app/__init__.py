@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 # serializator 
 from flask_marshmallow import Marshmallow
-from marshmallow import fields, Schema, post_load
+# from marshmallow import fields, Schema, post_load
 
 # models:
 from flask_sqlalchemy import SQLAlchemy
