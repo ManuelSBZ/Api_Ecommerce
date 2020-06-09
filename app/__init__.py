@@ -230,6 +230,18 @@ class UserSchema(Schema):
         type_="role"
     )
 
+    order=Relationship(
+        attribute="Order",
+        related_view="order_list",
+        related_view_kwargs={"user_id":"<id>"},
+        # endpoint relationship CUIDADO POR AQUI
+        self_view="user_order" ,
+        self_view_kwargs={"id":"<id>"},
+        many=True,
+        schema="OrderSchema",
+        type_="order"
+    )
+
 class CategorySchema(Schema):
     class Meta:
         type_="category"
