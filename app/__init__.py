@@ -282,12 +282,133 @@ class ArticleSchema(Schema):
         schema="CategorySchema",
         type_="category"
     )
+    orderarticle=Relationship(
+        attribute="order_association",
+        related_view="orderarticle_list",
+        related_view_kwargs={"article_id":"<id>"},
+        self_view="article_assc",
+        self_view_kwargs={"id":"<id>"},
+        schema="OrderArticleSchema",
+        type_="orderarticle"
+    )
         
+class OrderSchema(Schema):
+    class Meta:
+        type_="order"
+        self_view="order_detail"
+        self_view_kwargs={'id':'<id>'}
+        self_view_many="order_list"
+    
+    id=fields.Integer(as_string=True, dump_only=True)
+    status=fields.String()
+    description=fields.String()
+    date=fields.DateTime()
+    # lista de asociaciones
+    orderarticle = Relationship(
+        attribute="article_association", #que coño es esto
+        related_view="orderarticle_list",
+        related_view_kwargs={"order_id":"<id>"},
+        self_view="order_assc",
+        self_view_kwargs={"id":"<id>"},
+        many=True,
+        schema="OrderArticleSchema",
+        type_="orderarticle"
+    )
+    # articles = Relationship(
+    #     related_view="article_list",
+    #     related_view_kwargs={"order_id":"<id>"},
+    #     self_view="order_article",
+    #     self_view_kwargs={"id":"<id>"},
+    #     many=True,
+    #     schema="ArticleSchema",
+    #     type_="article"
+    # )
+
+    # detalle de usuario
+    user=Relationship(
+        related_view="user_detail",
+        related_view_kwargs={"order_id":"<id>"},
+        self_view="order_user",
+        self_view_kwargs={"id":"<id>"},
+        schema="UserSchema",
+        type_="user"
+    )
+
+class OrderArticleSchema(Schema):
+    class Meta:
+        type_="orderarticle"
+        self_view_many="orderarticle_list"
+        self_view="orderarticle_detail"
+        self_view_kwargs={"id":"<id>"}
+
+    id=fields.Integer(as_string=True, dump_only=True)
+    order_id= fields.Integer()
+    article_id=fields.Integer()
+    item_able=fields.Integer()
+    items=fields.Integer(load_only=True)
+    order=Relationship(
+        related_view="order_detail",
+        related_view_kwargs={"orderarticle_id":"<id>"},
+        self_view="orderarticle_order",
+        self_view_kwargs={"id":"<id>"},
+        schema="OrderSchema",
+        type_="order"
+    )
+    article=Relationship(
+        attribute="article_able",
+        related_view="article_detail",
+        related_view_kwargs={"orderarticle_id":"<id>"},
+        self_view="orderarticle_article",
+        self_view_kwargs={"id":"<id>"},
+        schema="ArticleSchema",
+        type_="article"
+    )
+
+
+    
+
+
 #RESOURCES DEFINITIONS => data: diccionario para crear(POST) objeto de clase User/Role
 # viewkwargs :diccionario que contiene todos los argumentos a ser ejecutados(GET) por view
 
 #user
 class UserDetail(ResourceDetail):
+    def before_get_object(self, view_kwargs):
+        if view_kwargs.get("id") is not None:
+            try:
+                self.session.query(self.model).filter_by(id= view_kwargs.get("id")).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))
+            
+        if view_kwargs.get("order_id") is not None:
+            try:
+                order=self.session.query(Order).filter_by(id=view_kwargs.get("order_id")).one()
+            except NoResultFound :
+                raise ObjectNotFound({"parameter":"order_id"},"order {} not found".format(view_kwargs.get("order_id")))
+            else:
+                if order.user is not None:
+                    view_kwargs["id"]=order.user_id
+                else:
+                    view_kwargs["id"]=None
+                    raise ObjectNotFound({"parameter":"order_id"},"Doesn´t have an related user")
+        
+        # PENDIENTE AGREGAR METODO PATCH PARA "/order/<int:order_id>/user"
+    def before_marshmallow(self,args,kwargs):
+        if request.method=="PATCH":
+            key=[key for key,v in kwargs.items()][0]
+            if kwargs.get(key) is not None:
+                try:
+                    order_=self.data_layer["session"].query(Order).filter_by(id=kwargs[key]).one()
+                except NoResultFound:
+                    raise ObjectNotFound({"parmeter":"computer_id"},"Order {} not Found".format(kwargs[key]))
+                else:
+                    if order_.user_id:
+                        kwargs["id"]=order_.user_id
+                    else:
+                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any user related")
+    
+
+    
     def after_get(self,result):
         return jsonify(result)
 
@@ -295,7 +416,10 @@ class UserDetail(ResourceDetail):
     data_layer={
         "session":db.session,
         "model":User,
-        "methods":{"after_get":after_get}
+        "methods":{
+            "after_get":after_get,
+            "before_get_object":before_get_object
+        }
     }
 
 class UserList(ResourceList):
@@ -304,7 +428,7 @@ class UserList(ResourceList):
         if view_kwargs.get("role_id") is not None:
             try:
                 # verificamos que exista el role con ese role_id
-                self.session.query(Role).filter_by(id=view_kwargs.get["role_id"])
+                self.session.query(Role).filter_by(id=view_kwargs.get("role_id"))
             except NoResultFound :
                 raise ObjectNotFound({'parameter': 'id'}, "Role:{} not found".format(view_kwargs.get("role_id")))
             else:
@@ -312,32 +436,42 @@ class UserList(ResourceList):
                 # lista de usuarios relaciondos con dicho Role
         return query_
     # para crear un usuario en el rol especificado
-    # def before_create_object(self,data,view_kwargs):
-    #     if view_kwargs.get("role_id") is not None:
-    #         # obtenemos el objeto del role
-    #         role_=self.session.query(Role).filter_by(id=view_kwargs["role_id"]).one()
-    #         print(data)
-    #         # diccionario a deserializar en una instancia de User.
-    #         data["role_id"]=role_.id
-    def before_get(*args,**kwargs):
-        print(f"KWARGS:{kwargs},ARGS:{args}")
-        print(args[0].__dict__)
+    def before_create_object(self,data,view_kwargs):
+        pass
+    def after_create_object(self, obj, data, view_kwargs):
+        if view_kwargs.get("role_id") is not None:
+            # obtenemos el objeto del role
+            print("after_create_o")
+            Parent=self.session.query(Role).filter_by(id=view_kwargs["role_id"]).one()
+            child=obj
+            print(f"OBJETO USER: {child.__dict__}")
+            Parent.user.append(child)
+            print("session.commit()")
+            
+            self.session.commit()
+            # con return no hace nada
+            
+    # def after_create_object
+
+    # def before_get(*args,**kwargs):
+    #     print(f"KWARGS:{kwargs},ARGS:{args}")
+    #     print(args[0].__dict__)
     def after_get(self,result):
             return jsonify(result)
-    get_schema_kwargs={"only":["name","email","password_hash"]}
+    get_schema_kwargs={"only":["name","email","username","admin"]}
     schema=UserSchema
     data_layer={
     "session":db.session,
     "model":User,
     "methods":{
         "query":query,
-        # "before_create_object":before_create_object,
+        "after_create_object":after_create_object,
         "after_get":after_get
         }
     }
     
 class UserRelationship(ResourceRelationship):
-
+    
     def after_get(self, result):
         return jsonify(result)
 
@@ -345,11 +479,32 @@ class UserRelationship(ResourceRelationship):
     data_layer={
         "session":db.session,
         "model":User,
-        "after_get":after_get
+        "methods":{
+            "after_get":after_get,
+            }
     }
 
+class UserOrderRelationship(ResourceRelationship):
+    
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=UserSchema
+    data_layer={
+        "session":db.session,
+        "model":User,
+        "methods":{
+            "after_get":after_get
+            }
+    }
 #Role
 class RoleDetail(ResourceDetail):
+    def before_get_object(self,view_kwargs):
+        if view_kwargs.get("id") is not None:
+            try:
+                self.session.query(self.model).filter_by(id= view_kwargs["id"]).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))
     def after_get(self,result):
         return jsonify(result)
 
@@ -357,7 +512,10 @@ class RoleDetail(ResourceDetail):
     data_layer={
         "session":db.session,
         "model":Role,
-        "methods":{"after_get":after_get}
+        "methods":{
+            "after_get":after_get,
+            "before_get_object":before_get_object
+        }
     }
 
 class RoleList(ResourceList):
@@ -367,17 +525,18 @@ class RoleList(ResourceList):
             try:
                 # verificamos que exista el User con ese role_id
                 self.session.query(User).filter_by(id=view_kwargs["user_id"])
-            except NoResultFound :
+            except NoResultFound:
                 raise ObjectNotFound({'parameter': 'id'}, "User:{} not found".format(view_kwargs.get("user_id")))
             else:
                 query_=query_.join(roles_users).join(User).filter(User.id==view_kwargs.get("user_id"))
         return query_
     # para crear un usuario en el rol especificado
-    def before_create_object(self,data,view_kwargs):
+    def after_create_object(self,obj,data,view_kwargs):
         if view_kwargs.get("user_id") is not None:
-            # obtenemos el objeto del role
-            role_=self.session.query(User).filter(id=view_kwargs.get("user_id")).one()
-            data["user_id"]=user_.id
+            role_=obj
+            user_=self.session.query(User).filter_by(id=view_kwargs["user_id"]).one()
+            user_.role.append(role_)
+            self.session.commit()
 
     def after_get(self,result):
             return jsonify(result)
@@ -388,13 +547,13 @@ class RoleList(ResourceList):
     "model":Role,
     "methods":{
         "query":query,
-        "before_create_object":before_create_object,
+        "after_create_object":after_create_object,
         "after_get":after_get
         }
     }
     
 class RoleRelationship(ResourceRelationship):
-
+    
     def after_get(self, result):
         return jsonify(result)
 
@@ -402,22 +561,47 @@ class RoleRelationship(ResourceRelationship):
     data_layer={
         "session":db.session,
         "model":Role,
-        "after_get":after_get
+        "methods":{
+        "after_get":after_get        }
     }
 
 # Category
 class CategoryDetail(ResourceDetail):
     def before_get_object(self,view_kwargs):
+        if view_kwargs.get("id") is not None:
+            print("idddddddddddddd")
+            try:  
+                self.session.query(self.model).filter_by(id= view_kwargs["id"]).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))        
         if view_kwargs.get("article_id") is not None:
             try:
                 art=self.session.query(Article).filter_by(id=view_kwargs["article_id"]).one()
             except NoResultFound :
-                ObjectNotFound({"parameter":"article_id"},"Article {} not found".format(view_kwargs.get("article_id")))
+                raise ObjectNotFound({"parameter":"article_id"},"Article {} not found".format(view_kwargs.get("article_id")))
             else:
                 if art.category is not None:
-                    view_kwargs["id"]=art.category.id
+                    print("AQEUIIII")
+                    view_kwargs["id"]=art.CategoryId
                 else:
-                    view_kwargs["id"]=None
+                    
+                    raise ObjectNotFound({"parameter":"id"},"Doesnt have any Category related")
+
+    def before_marshmallow(self,args,kwargs):
+        if request.method=="PATCH":
+            key=[key for key,v in kwargs.items()][0]
+            if kwargs.get(key) is not None:
+                try:
+                    article_=self.data_layer["session"].query(Article).filter_by(id=kwargs[key]).one()
+                except NoResultFound:
+                    raise ObjectNotFound({"parmeter":"article_id"},"Article {} not Found".format(kwargs[key]))
+                else:
+                    if article_.CategoryId:
+                        kwargs["id"]=article_.CategoryId
+                    else:
+                        raise ObjectNotFound({"parameter: Object related"},"Doesnt exits any category related")
+    
+
 
     def after_get(self,result):
         return jsonify(result)
@@ -455,11 +639,45 @@ class CategoryRelationship(ResourceRelationship):
     data_layer={
         "session":db.session,
         "model":Category,
+        "methods":{
         "after_get":after_get
+        }
     }
 
 # Articles
 class ArticleDetail(ResourceDetail):
+    def before_get_object(self, view_kwargs):
+        if view_kwargs.get("id") is not None:
+            try:
+                self.session.query(self.model).filter_by(id= view_kwargs["id"]).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))
+        if view_kwargs.get("orderarticle_id") is not None:
+            try:
+                assc=self.session.query(Order_Article).filter_by(id=view_kwargs["orderarticle_id"]).one()
+            except NoResultFound :
+                raise ObjectNotFound({"parameter":"orderarticle_id"},"Article {} not found".format(view_kwargs.get("orderarticle_id")))
+            else:
+                if assc.article_able is not None:
+                    view_kwargs["id"]=assc.article_able.id
+                else:
+                    raise ObjectNotFound({"parameter":"orderarticle_id"},"Doesn't have any article related")
+    def before_marshmallow(self,args,kwargs):
+        if request.method=="PATCH":
+            key=[key for key,v in kwargs.items()][0]
+            if kwargs.get(key) is not None:
+                try:
+                    assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
+                except NoResultFound:
+                    raise ObjectNotFound({"parmeter":"orderarticle_id"},"Order_Article {} not Found".format(kwargs[key]))
+                else:
+                    if assc.article_id:
+                        kwargs["id"]=assc.article_id
+                    else:
+                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any article related")
+    
+
+        
 
     def after_get(self,result):
         return jsonify(result)
@@ -468,7 +686,10 @@ class ArticleDetail(ResourceDetail):
     data_layer={
         "session":db.session,
         "model":Article,
-        "methods":{"after_get":after_get}
+        "methods":{
+            "after_get":after_get,
+            "before_get_object":before_get_object
+        }
     }
 
 class ArticleList(ResourceList):
@@ -500,9 +721,9 @@ class ArticleList(ResourceList):
         "session":db.session,
         "model":Article,
         "methods":{
-        "query":query,
-        "before_create_object":before_create_object,
-        "after_get":after_get
+            "query":query,
+            "before_create_object":before_create_object,
+            "after_get":after_get
         }
     }
     
