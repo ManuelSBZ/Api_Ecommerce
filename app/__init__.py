@@ -78,7 +78,7 @@ class Order_Article(db.Model):
     @items.setter
     def items(self,quantity):
         if self.article is not None:
-            if quantity < self.article.stock:
+            if quantity < self.article_able.stock:#pendiente por arreglar en orderaritcle
                 self.item_able = quantity
             else:
                 raise AttributeError("item´s Quantity can´t be more than stock article")
