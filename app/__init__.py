@@ -113,8 +113,8 @@ class Category(db.Model):
     # name que se debe poner, sino genera conflictos al importarlo
     __tablename__='Category'
     #Primary key como atributo
-    id=Column(Integer, primary_key=True)
-    name=Column(String(100), nullable=False)
+    id=Column(Integer, primary_key=True, nullable=False)
+    name=Column(String(100), nullable=False, unique=True)# COLOCAR UNIQUE=TRUE
 
 class Article(db.Model):
     __tablename__="Article"
