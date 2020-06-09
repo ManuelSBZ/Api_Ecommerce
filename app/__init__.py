@@ -212,14 +212,14 @@ class UserSchema(Schema):
         self_view_kwargs={"id":"<id>"}
         self_view_many="user_list"
     id=fields.Integer(as_string=True, dump_only=True)
-    username=fields.String()
     name=fields.String()
-    password=fields.String()
-    password_hash=fields.String(dump_only=True
+    username=fields.String()
+    password=fields.String(load_only=True
     )
     email= fields.Email()
     admin=fields.Boolean()
     role=Relationship(
+        attribute="role",
         related_view="role_list",
         related_view_kwargs={"user_id":"<id>"},
         # endpoint relationship CUIDADO POR AQUI
