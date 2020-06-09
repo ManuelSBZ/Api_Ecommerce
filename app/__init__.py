@@ -144,7 +144,6 @@ roles_users= db.Table('roles_users',
     db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )    
-
 class User(db.Model):
     id=Column(Integer,nullable=False, primary_key=True)
     username=Column(String(50),unique=True,nullable=False)
@@ -184,9 +183,8 @@ class User(db.Model):
     #     return self.admin
 
 class Role(db.Model):
-    id=Column(Integer, nullable=False,primary_key=True)
-    name=Column(String(10), nullable=False)
-
+    id=Column(Integer, nullable=False, primary_key=True)
+    name=Column(String(10), nullable=False, unique=True)
 
 #SCHEMAS DEFINITIONS
 class RoleSchema(Schema):
