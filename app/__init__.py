@@ -504,7 +504,7 @@ class ArticleRelationship(ResourceRelationship):
 #ROUTES DEFINITIONS
 api=Api(app)
 # user
-api.route(UserDetail,"user_detail","/user/<int:id>")
+api.route(UserDetail,"user_detail","/user/<int:id>","order/<int:order_id>/user")#1
 api.route(UserList,"user_list","/user", "/role/<int:role_id>/user")#
 api.route(UserRelationship,"user_roles","/user/<int:id>/relationship/role")
 # role
@@ -518,15 +518,50 @@ api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relatio
 
 # articles
 api.route(ArticleDetail,"article_detail","/article/<int:id>")
-api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#
+api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article", "/order/<int:order_id>/article")#1
 api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
 
-# class OrderSchema(Schema):
-#     class Meta:
-#         type_="order"
-#         self_view="order_detail"
-#         self_view_kwargs={'id':'<id>'}
-#         self_view_many="order_list"
+class OrderSchema(Schema):
+    class Meta:
+        type_="order"
+        self_view="order_detail"
+        self_view_kwargs={'id':'<id>'}
+        self_view_many="order_list"
+    
+    id=fields.Integer(as_string=True, dump_only=True)
+    status=fields.String()
+    description=fields.String()
+    date=fields.DateTime()
+    # lista de asociaciones
+    article_association = Relationship(
+        related_view="order_article_list",
+        related_view_kwargs={"order_id":"<id>"},
+        self_view="order_assc",
+        self_view_kwargs={"id":"<id>"},
+        many=True,
+        schema="OrderArticleSchema",
+        type_="order&article"
+    )
+    articles = Relationship(
+        related_view="article_list",
+        related_view_kwargs={"order_id":"<id>"},
+        self_view="order_article",
+        self_view_kwargs={"id":"<id>"},
+        many=True,
+        schema="ArticleSchema",
+        type_="article"
+
+    )
+    # detalle de usuario
+    user=Relationship(
+        related_view="user_detail",
+        related_view_kwargs={"order_id":"<id>"},
+        self_view="order_user",
+        self_view_kwargs={"id":"<id>"},
+        schema="UserSchema",
+        type_="user"
+    )
+
     
     
 
