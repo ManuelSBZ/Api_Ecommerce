@@ -736,7 +736,264 @@ class ArticleRelationship(ResourceRelationship):
     data_layer={
         "session":db.session,
         "model":Article,
+        "methods":{
         "after_get":after_get
+        }
+    }
+class ArticleAsscOrderRelationship(ResourceRelationship):
+
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=ArticleSchema
+    data_layer={
+        "session":db.session,
+        "model":Article,
+        "methods":{
+            "after_get":after_get
+        }
+    }
+
+#order
+
+class OrderDetail(ResourceDetail):
+    def before_get_object(self, view_kwargs):
+        if view_kwargs.get("id") is not None:
+            try:
+                self.session.query(self.model).filter_by(id= view_kwargs["id"]).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))            
+        if view_kwargs.get("orderarticle_id") is not None:
+            try:
+                assc=self.session.query(Order_Article).filter_by(id=view_kwargs["orderarticle_id"]).one()
+            except NoResultFound :
+                raise ObjectNotFound({"parameter":"orderarticle_id"},"Article {} not found".format(view_kwargs.get("orderarticle_id")))
+            else:
+                if assc.order is not None:
+                    view_kwargs["id"]=assc.order.id
+                else:
+                    raise ObjectNotFound({"parameter":"Order"},"Doesn´t have any related order ")
+
+    def before_marshmallow(self,args,kwargs):
+        if request.method=="PATCH":
+            key=[key for key,v in kwargs.items()][0]
+            if kwargs.get(key) is not None:
+                try:
+                    assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
+                except NoResultFound:
+                   raise ObjectNotFound({"parmeter":"orderarticle_id"},"OrderArticle {} not Found".format(kwargs[key]))
+                else:
+                    if assc.order_id:
+                        kwargs["id"]=assc.order_id
+                    else:
+                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any order related")
+    
+
+                    
+    def after_get(self,result):
+        return jsonify(result)
+
+    schema=OrderSchema
+    data_layer={
+        "session":db.session,
+        "model":Order,
+        "methods":{
+            "after_get":after_get,
+            "before_get_object":before_get_object,
+        }
+    }
+
+class OrderList(ResourceList):
+    def query(self,view_kwargs):
+        query_=self.session.query(Order)
+        if view_kwargs.get("user_id") is not None:
+            arg="user_id"
+            model=User
+        elif view_kwargs.get("article_id"):
+            arg="article_id"
+            model=Order_Article
+        else:
+            arg=""
+            model=None
+
+        if view_kwargs.get(arg) is not None:
+            try:
+                self.session.query(model).filter_by(id=view_kwargs[arg]).one()
+            except NoResultFound:
+                raise ObjectNotFound({'parameter': arg}, "{}:{} not found".format(model.__tablename__,view_kwargs.get(arg)))
+            else:
+                query_=query_.join(model).filter(model.id==view_kwargs.get(arg))
+                # retornando query de los usuarios relcionados con el rol especifiado por el id
+        return query_
+
+    def before_create_object(self,data, view_kwargs):
+        if view_kwargs.get("user_id") is not None:
+            print(f"CATEGORY CREATED DATA: {data}, VIEW_KWARGS:{view_kwargs}")
+            try:
+                user_=self.session.query(User).filter_by(id=view_kwargs["user_id"]).one() 
+                data["user_id"]=user_.id
+            except NoResultFound:
+                raise ObjectNotFound({'parameter': 'id'}, "User:{} not found".format(view_kwargs.get("user_id")))
+
+    def after_get(self,result):
+            return jsonify(result)
+
+    schema=OrderSchema
+    data_layer={
+        "session":db.session,
+        "model":Order,
+        "methods":{
+            "query":query,
+            "before_create_object":before_create_object,
+            "after_get":after_get
+        }
+    }
+    
+class OrderUserRelationship(ResourceRelationship):
+
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=OrderSchema
+    data_layer={
+        "session":db.session,
+        "model":Order,
+        "methods":{
+            "after_get":after_get
+            }
+    }
+
+class OrderAsscArticleRelationship(ResourceRelationship):
+
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=OrderSchema
+    data_layer={
+        "session":db.session,
+        "model":Order,
+        "methods":{
+            "after_get":after_get
+            }
+    }
+
+class OrderArticleRelationship(ResourceRelationship):
+
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=OrderSchema
+    data_layer={
+        "session":db.session,
+        "model":Order,
+        "methods":{
+            "after_get":after_get
+            }
+    }
+
+# orderarticles
+class OrderArticleDetail(ResourceDetail):
+    
+    def before_get_object(self,view_kwargs):
+        if view_kwargs.get("id") is not None:
+            try:
+                self.session.query(self.model).filter_by(id= view_kwargs["id"]).one()
+            except NoResultFound:
+                raise ObjectNotFound({"parameter":"id"},"{} {} not found".format(self.model.__tablename__,view_kwargs.get("id")))
+    def after_get(self,result):
+        return jsonify(result)
+
+    schema=OrderArticleSchema
+    data_layer={
+        "session":db.session,
+        "model":Order_Article,
+        "methods":{
+            "after_get":after_get,
+            "before_get_object":before_get_object
+            }
+    }
+
+class OrderArticleList(ResourceList):
+    def query(self,view_kwargs):
+        query_=self.session.query(Order_Article)
+        if view_kwargs.get("order_id") is not None:
+            arg="order_id"
+            model=Order
+        elif view_kwargs.get("article_id") is not None:
+            arg="article_id"
+            model=Article
+        else:
+            arg=""
+            model=None
+
+        if view_kwargs.get(arg) is not None:
+            try:
+                self.session.query(model).filter_by(id=view_kwargs[arg]).one()
+            except NoResultFound:
+                raise ObjectNotFound({'parameter': arg}, "{}:{} not found".format(model.__tablename__,view_kwargs.get(arg)))
+            else:
+                query_=query_.join(model).filter(model.id==view_kwargs.get(arg))
+                # retornando query de los usuarios relcionados con el rol especifiado por el id
+        return query_
+
+    def before_create_object(self,data, view_kwargs):
+        if view_kwargs.get("order_id") is not None:
+            arg="order_id"
+            model=Order
+        elif view_kwargs.get("article_id") is not None:
+            arg="article_id"
+            model=Article
+        else:
+            arg=""
+            model=None
+        if view_kwargs.get(arg) is not None:
+            print(f"CATEGORY CREATED DATA: {data}, VIEW_KWARGS:{view_kwargs}")
+            try:
+                model_=self.session.query(model).filter_by(id=view_kwargs[arg]).one() 
+                data[arg]=model_.id
+            except NoResultFound:
+                raise ObjectNotFound({'parameter': 'id'}, "{}:{} not found".format(model.__tablename__,view_kwargs.get("user_id")))
+        print(data)
+    def after_get(self,result):
+            return jsonify(result)
+
+    schema=OrderArticleSchema
+    data_layer={
+        "session":db.session,
+        "model":Order_Article,
+        "methods":{
+            "query":query,
+            "before_create_object":before_create_object,
+            "after_get":after_get
+        }
+    }
+    
+class OrderArticleArticleRelationship(ResourceRelationship):
+    
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=OrderArticleSchema
+    data_layer={
+        "session":db.session,
+        "model":Order_Article,
+        "methods":{
+            "after_get":after_get
+            }
+    }
+
+class OrderArticleOrderRelatioship(ResourceRelationship):
+
+    def after_get(self, result):
+        return jsonify(result)
+
+    schema=OrderArticleSchema
+    data_layer={
+        "session":db.session,
+        "model":Order_Article,
+        "methods":{
+            "after_get":after_get
+            }
     }
 
 
@@ -744,99 +1001,44 @@ class ArticleRelationship(ResourceRelationship):
 #ROUTES DEFINITIONS
 api=Api(app)
 # user
-api.route(UserDetail,"user_detail","/user/<int:id>","order/<int:order_id>/user")#1
-api.route(UserList,"user_list","/user", "/role/<int:role_id>/user")#
-api.route(UserRelationship,"user_roles","/user/<int:id>/relationship/role")
+api.route(UserDetail,"user_detail","/user/<int:id>","/order/<int:order_id>/user")#GET PATCH DELETE,          pendiente el post user, cambiar al resource list 
+api.route(UserList,"user_list","/user", "/role/<int:role_id>/user")#GET users, POST User.
+api.route(UserRelationship,"user_roles","/user/<int:id>/relationship/role")#GET POST PATCH DELETE relationship
+api.route(UserOrderRelationship,"user_order","/user/<int:id>/relationship/order")#GET POST PATCH DELETE relationship 
 # role
-api.route(RoleDetail,"role_detail", "/role/<int:id>")
-api.route(RoleList,"role_list", "/role" ,"/user/<int:user_id>/role")#
-api.route(RoleRelationship,"role_users","/role/<int:id>/relationship/user")
+api.route(RoleDetail,"role_detail", "/role/<int:id>") #GET PATCH DELETE role
+api.route(RoleList,"role_list", "/role" ,"/user/<int:user_id>/role") #GET POST role, POST role=>user
+api.route(RoleRelationship,"role_users","/role/<int:id>/relationship/user") #GET POST PATCH DELETE relationship            
 # category
-api.route(CategoryDetail,"category_detail","/category/<int:id>", "/article/<int:article_id>/category" )#
-api.route(CategoryList, "category_list", "/category")
-api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relationship/article")
+api.route(CategoryDetail,"category_detail","/category/<int:id>", "/article/<int:article_id>/category") #GET PATCH DELETE category   
+api.route(CategoryList, "category_list", "/category") #GET POST CATEGORY
+api.route(CategoryRelationship, "category_articles", "/category/<int:id>/relationship/article") #GET POST PATCH DELETE relationship     DELETE NO FUNCION CORREGIR 204
 
 # articles
-api.route(ArticleDetail,"article_detail","/article/<int:id>")
-api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article", "/order/<int:order_id>/article")#1
-api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")
-
-class OrderSchema(Schema):
-    class Meta:
-        type_="order"
-        self_view="order_detail"
-        self_view_kwargs={'id':'<id>'}
-        self_view_many="order_list"
-    
-    id=fields.Integer(as_string=True, dump_only=True)
-    status=fields.String()
-    description=fields.String()
-    date=fields.DateTime()
-    # lista de asociaciones
-    article_association = Relationship(
-        related_view="order_article_list",
-        related_view_kwargs={"order_id":"<id>"},
-        self_view="order_assc",
-        self_view_kwargs={"id":"<id>"},
-        many=True,
-        schema="OrderArticleSchema",
-        type_="order&article"
-    )
-    articles = Relationship(
-        related_view="article_list",
-        related_view_kwargs={"order_id":"<id>"},
-        self_view="order_article",
-        self_view_kwargs={"id":"<id>"},
-        many=True,
-        schema="ArticleSchema",
-        type_="article"
-
-    )
-    # detalle de usuario
-    user=Relationship(
-        related_view="user_detail",
-        related_view_kwargs={"order_id":"<id>"},
-        self_view="order_user",
-        self_view_kwargs={"id":"<id>"},
-        schema="UserSchema",
-        type_="user"
-    )
-
-    
-    
-
+api.route(ArticleDetail,"article_detail","/article/<int:id>","/orderarticle/<int:orderarticle_id>/article")##GET PATCH DELETE USER E PATCH ARTICLE_ID
+api.route(ArticleList, "article_list", "/article", "/category/<int:category_id>/article")#GET POST ARTICLE, POST ARTICLE => CATEGORY
+api.route(ArticleRelationship, "article_category", "/article/<int:id>/relationship/category")#GET POST PATCH DELETE relationship
+api.route(ArticleAsscOrderRelationship, "article_assc", "/article/<int:id>/relationship/orderarticle")#GET POST PATCH DELETE relationship
 
 # Order(1)
-api.route(OrderDetail,"order_detail","/order/<int:id>")#  se podria añadir detalle de orden desde asociacion con dos ids 
-api.route(OrderList, "order_list", "/order", "/user/<int:user_id>/order", "article/<int:article_id>/order")# P 
-api.route(OrderAsscArticleRelationship, "order_assc", "/order/<int:id>/relationship/order&article")# 
-api.route(OrderUserRelationship, "order_user", "/order/<int:id>/relationship/user")# 
-api.route(OrderAsscArticleRelationship, "order_article", "/order/<int:id>/relationship/article")# trae lista de relaciones con articulos
+api.route(OrderDetail,"order_detail","/order/<int:id>", "/orderarticle/<int:orderarticle_id>/order")# GET PATCH DELETE ORDER
+api.route(OrderList, "order_list","/order","/user/<int:user_id>/order","/articleorder/<int:article_id>/order")## GET POST ORDER, POST ORDER =>USER
+api.route(OrderAsscArticleRelationship, "order_assc","/order/<int:id>/relationship/orderarticle")#GET POST PATCH DELETE relationship
+api.route(OrderUserRelationship, "order_user","/order/<int:id>/relationship/user")##GET POST PATCH DELETE relationship
 
-
-
-class OrderArticleSchema(Schema):
-    class Meta:
-        self_view_many="order_article_list"
-
-    order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
-    article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
-    item_able=Column(Integer, nullable=False)
-    order=relationship("Order", back_populates="article_association")
-    article_able=relationship("Article", back_populates="order_association")
     
 
-
-
-
-
-
-
 # Order_Article:
-# api.route(OrderArticleDetail,"order_article_detail","/order&article/<int:id>")# trae detalle de orden con relaciones con articulos y relacion con usuario
-api.route(OrderArticleList, "order_article_list", "/order&article", "/order/<int:order_id>/order&article", "article/<int:article_id>/order&article")# trae lista de ordenes existentes / lista de ordenes relacionadas con un usuario 
-# api.route(OrderArticleRelationship, "order_article_article", "/order&article/<int:id>/relationship/article")# trae lista de relaciones con articulos
-# api.route(OrderUserRelationship, "order_article_order", "/order&article/<int:id>/relationship/user")# trae lista de relaciones con usuarios
+api.route(OrderArticleDetail,"orderarticle_detail","/orderarticle/<int:id>")# GET PATCH DELETE ORDER_ARTICLE ASSOCIATION
+
+api.route(OrderArticleList, "orderarticle_list", 
+         "/orderarticle", 
+         "/order/<int:order_id>/orderarticle", 
+         "/article/<int:article_id>/orderarticle")##GET POST ARTICLE_ASSOCIATION, POST ORDER_ARTICLE => ORDER, POST ORDER_ARTICLE => ARTICLE
+
+api.route(OrderArticleArticleRelationship, "orderarticle_article", "/orderarticle/<int:id>/relationship/article")#GET POST PATCH DELETE relationship
+
+api.route(OrderArticleOrderRelatioship, "orderarticle_order", "/orderarticle/<int:id>/relationship/order")#GET POST PATCH DELETE relationship
 
 
 if __name__ == "__main__":
