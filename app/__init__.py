@@ -50,13 +50,23 @@ ma= Marshmallow(app)
 # Order ==> Order_Article ResourceRelationship/
 # Article ==> Order_Article ResourceRelationship
 
+@app.route("/<id>",methods=["GET","POST"])
+def hello_request(id):
+    print(request.json)
+    print(request.args)
+    print(request.values)
+    print(request.url)
+
+    return jsonify(request.json)
+
+
 
 # MODELS
 class Order_Article(db.Model):
     __tablename__='Order_Article'
     id= Column(Integer(), primary_key=True , nullable=False)
-    order_id=Column(Integer, db.ForeignKey('Order.id'), primary_key=True, nullable=False)
-    article_id=Column(Integer, db.ForeignKey("Article.id"), primary_key=True , nullable= False)
+    order_id=Column(Integer, db.ForeignKey('Order.id'))
+    article_id=Column(Integer, db.ForeignKey("Article.id"))
     item_able=Column(Integer, nullable=False)
     order=relationship("Order", back_populates="article_association")
     article_able=relationship("Article", back_populates="order_association")
