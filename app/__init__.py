@@ -38,7 +38,6 @@ db=SQLAlchemy(app)
 
 ma= Marshmallow(app)
 
-
 # TABLES MODELS DEFINITION 
 # articles_orders= db.Table('articles_orders',
 #     db.Column('article_id', db.Integer, db.ForeignKey('Article.id'), primary_key=True),
