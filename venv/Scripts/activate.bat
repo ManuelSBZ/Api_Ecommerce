@@ -1,6 +1,11 @@
 @echo off
 
 rem This file is UTF-8 encoded, so we need to update the current code page while executing it
+
+set FLASK_APP=entrypoint:app
+set FLASK_ENV=development
+set APP_SETTINGS_MODULE=config.default
+
 for /f "tokens=2 delims=:." %%a in ('"%SystemRoot%\System32\chcp.com"') do (
     set _OLD_CODEPAGE=%%a
 )
