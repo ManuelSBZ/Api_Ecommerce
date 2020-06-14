@@ -1,0 +1,4 @@
+SQLALCHEMY_DATABASE_URI="mysql+pymysql://msb:qwe@localhost/db_8?charset=utf8mb4"
+SECRET_KEY="SECRET_KEY_RIGHT_NOW"
+DEBUG=True
+SQLALCHEMY_TRACK_MODIFICATIONS=False
