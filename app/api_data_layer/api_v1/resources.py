@@ -32,19 +32,18 @@ class UserDetail(ResourceDetail):
     def before_marshmallow(self,args,kwargs):
         if request.method=="PATCH":
             key=[key for key,v in kwargs.items()][0]
-            if kwargs.get(key) is not None:
-                try:
-                    order_=self.data_layer["session"].query(Order).filter_by(id=kwargs[key]).one()
-                except NoResultFound:
-                    raise ObjectNotFound({"parmeter":"computer_id"},"Order {} not Found".format(kwargs[key]))
-                else:
-                    if order_.user_id:
-                        kwargs["id"]=order_.user_id
+            print(kwargs)
+            if key != "id":
+                if kwargs.get(key) is not None :
+                    try:
+                        order_=self.data_layer["session"].query(Order).filter_by(id=kwargs[key]).one()
+                    except NoResultFound:
+                        raise ObjectNotFound({"parmeter":"user_id"},"User {} not Found".format(kwargs[key]))
                     else:
-                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any user related")
-    
-
-    
+                        if order_.user_id:
+                            kwargs["id"]=order_.user_id
+                        else:
+                            raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any user related") 
     def after_get(self,result):
         return jsonify(result)
 
@@ -226,17 +225,18 @@ class CategoryDetail(ResourceDetail):
     def before_marshmallow(self,args,kwargs):
         if request.method=="PATCH":
             key=[key for key,v in kwargs.items()][0]
-            if kwargs.get(key) is not None:
-                try:
-                    article_=self.data_layer["session"].query(Article).filter_by(id=kwargs[key]).one()
-                except NoResultFound:
-                    raise ObjectNotFound({"parmeter":"article_id"},"Article {} not Found".format(kwargs[key]))
-                else:
-                    if article_.CategoryId:
-                        kwargs["id"]=article_.CategoryId
+            if key!="id":
+                if kwargs.get(key) is not None:
+                    try:
+                        article_=self.data_layer["session"].query(Article).filter_by(id=kwargs[key]).one()
+                    except NoResultFound:
+                        raise ObjectNotFound({"parmeter":"article_id"},"Article {} not Found".format(kwargs[key]))
                     else:
-                        raise ObjectNotFound({"parameter: Object related"},"Doesnt exits any category related")
-    
+                        if article_.CategoryId:
+                            kwargs["id"]=article_.CategoryId
+                        else:
+                            raise ObjectNotFound({"parameter: Object related"},"Doesnt exits any category related")
+        
 
 
     def after_get(self,result):
@@ -301,17 +301,18 @@ class ArticleDetail(ResourceDetail):
     def before_marshmallow(self,args,kwargs):
         if request.method=="PATCH":
             key=[key for key,v in kwargs.items()][0]
-            if kwargs.get(key) is not None:
-                try:
-                    assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
-                except NoResultFound:
-                    raise ObjectNotFound({"parmeter":"orderarticle_id"},"Order_Article {} not Found".format(kwargs[key]))
-                else:
-                    if assc.article_id:
-                        kwargs["id"]=assc.article_id
+            if key!="id":
+                if kwargs.get(key) is not None:
+                    try:
+                        assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
+                    except NoResultFound:
+                        raise ObjectNotFound({"parmeter":"orderarticle_id"},"Order_Article {} not Found".format(kwargs[key]))
                     else:
-                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any article related")
-    
+                        if assc.article_id:
+                            kwargs["id"]=assc.article_id
+                        else:
+                            raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any article related")
+        
 
         
 
@@ -413,16 +414,17 @@ class OrderDetail(ResourceDetail):
     def before_marshmallow(self,args,kwargs):
         if request.method=="PATCH":
             key=[key for key,v in kwargs.items()][0]
-            if kwargs.get(key) is not None:
-                try:
-                    assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
-                except NoResultFound:
-                   raise ObjectNotFound({"parmeter":"orderarticle_id"},"OrderArticle {} not Found".format(kwargs[key]))
-                else:
-                    if assc.order_id:
-                        kwargs["id"]=assc.order_id
+            if key!="id":
+                if kwargs.get(key) is not None:
+                    try:
+                        assc=self.data_layer["session"].query(Order_Article).filter_by(id=kwargs[key]).one()
+                    except NoResultFound:
+                        raise ObjectNotFound({"parmeter":"orderarticle_id"},"OrderArticle {} not Found".format(kwargs[key]))
                     else:
-                        raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any order related")
+                        if assc.order_id:
+                            kwargs["id"]=assc.order_id
+                        else:
+                            raise ObjectNotFound({"parameter:Object related"},"Doesnt exits any order related")
     
 
                     
