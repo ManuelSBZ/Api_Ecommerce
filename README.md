@@ -22,3 +22,5 @@ El presente repositorio anexa un una base de datos expuesta con una interface ap
 - Para probar la api se recomienda hacer uso de postman, cliente en el cual se tiene una coleccion de 93 endpoints para las distintas operaciones CRUD. Para acceder a la coleccion
   usar el siguiente url Postman https://www.getpostman.com/collections/2e8302ec380ebc590347 .
  
+ # Diagrama entidad relación
+ ![Diagrama entidad relación Ecommerce](https://raw.githubusercontent.com/ManuelSBZ/backend/blob/master/ecommerce.png)
