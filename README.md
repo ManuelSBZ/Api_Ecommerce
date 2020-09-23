@@ -6,7 +6,8 @@ El presente repositorio anexa un una base de datos expuesta con una interface ap
    1. Python 3.7-alpine.
    2. Flask, Flask-Restjsonapi y Flask-Sqlalchemy.
    3. Postgresql 10-alpine.
-   4. Docker 19.03.12.
+   4. Gunicorn 20.0.4 .
+   4. Docker 19.03.12 .
  
 - Patrones de diseño Flask:
   1. Factory.
