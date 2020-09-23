@@ -1,0 +1,36 @@
+version: '3'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./DockerFile
+    depends_on:
+      - db
+    environment:
+      SQLALCHEMY_DATABASE_URI: postgresql+psycopg2://postgres:dev@db/dev
+      FLASK_ENV: development
+      FLASK_APP: "entrypoint:app"
+    networks:
+      - default
+    ports:
+      - 5000:5000
+    volumes:
+      - ./app:/usr/src/app/app
+      - ./migrations:/usr/src/app/migrations
+    restart: always
+
+  db:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: dev
+      PGDATA: /var/lib/postgresql/data
+      POSTGRES_DB: dev
+    image: postgres:10-alpine
+    networks:
+      - default
+    ports:
+      - 5432:5432
+    restart: always
+    volumes:
+      - /var/lib/postgresql/data
