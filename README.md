@@ -23,4 +23,4 @@ El presente repositorio anexa un una base de datos expuesta con una interface ap
   usar el siguiente url Postman https://www.getpostman.com/collections/2e8302ec380ebc590347 .
  
  # Diagrama entidad relación
- ![Diagrama entidad relación Ecommerce](https://raw.githubusercontent.com/ManuelSBZ/backend/blob/master/ecommerce.png)
+ ![Diagrama entidad relación Ecommerce](https://github.com/ManuelSBZ/backend/blob/master/ecommerce.png)
