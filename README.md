@@ -18,7 +18,10 @@ El presente repositorio anexa un una base de datos expuesta con una interface ap
     2. Abrir simbolo del sistema.
     3. Ubicarse desde la consola en la carpeta que contiene el docker-compose.yaml dentro del proyecto.
     4. Ejecutar " docker-compose up --build ".
+    5. Explorar la solucion usando un cliente de pruebas de api (ej: Postman) o bien un navegador de preferencia guiandose con la colección postman que mas abajo se anexa.
     
 - Para probar la api se recomienda hacer uso de postman, cliente en el cual se tiene una coleccion de 93 endpoints para las distintas operaciones CRUD. Para acceder a la coleccion
   usar el siguiente url Postman https://www.getpostman.com/collections/2e8302ec380ebc590347 .
  
+ # Diagrama entidad relación
+ ![Diagrama entidad relación Ecommerce](https://github.com/ManuelSBZ/backend/blob/master/ecommerce.png)
