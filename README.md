@@ -13,7 +13,7 @@ El presente repositorio anexa un una base de datos expuesta con una interface ap
   1. Factory.
   2. Blueprint.
 
-- Para explorar la solucion se debe:
+- Para explorar la solución se debe:
     1. Clonar el repositorio.
     2. Abrir simbolo del sistema.
     3. Ubicarse desde la consola en la carpeta que contiene el docker-compose.yaml dentro del proyecto.
