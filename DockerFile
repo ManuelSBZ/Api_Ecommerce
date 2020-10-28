@@ -26,4 +26,3 @@ RUN chown -R app:app $APP_HOME
 USER app:app
 
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
-
